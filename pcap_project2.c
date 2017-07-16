@@ -101,7 +101,15 @@ int main(int argc, char *argv[])
 		}
 
 	const struct sniff_ip *ip;
-
+	//while(1){
+		/* Grab a packet */
+		//packet = pcap_next(handle, &header);
+		/* Print its length */
+		//printf("Jacked a packet with length of [%d]\n", header.len);
+		/* And close the session */
+		//pcap_close(handle);
+		//return(0);
+		//}
 
 	/*while (pcap_next_ex(handle, &header, &Buffer) >= 0)
 	{
@@ -134,6 +142,12 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	
 	/* define ethernet header */
 	ethernet = (struct sniff_ethernet*)(packet);
+     printf("\n");
+     printf("Ethernet Header\n");
+     printf("   |-Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", ethernet->h_dest[0] , ethernet->h_dest[1] , ethernet->h_dest[2] , ethernet->h_dest[3] , ethernet->h_dest[4], ethernet->h_dest[5]);
+     printf("   |-Source Address      : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", ethernet->h_source[0] , ethernet->h_source[1] , ethernet->h_source[2] , ethernet->h_source[3], ethernet->h_source[4], ethernet->h_source[5]);
+     //printf("   |-Protocol            : %u \n",(unsigned short)eth->h_proto);
+
 	ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
 	size_ip = IP_HL(ip)*4;
 	if (size_ip < 20) {
