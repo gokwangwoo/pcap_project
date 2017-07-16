@@ -42,10 +42,10 @@ int main(int argc, char *argv[])
 		char filter_exp[] = "port 80";	/* The filter expression */
 		bpf_u_int32 mask;		/* Our netmask */
 		bpf_u_int32 net;		/* Our IP */
-		struct pcap_pkthdr header;	/* The header that pcap gives us */
+		struct pcap_pkthdr *header;	/* The header that pcap gives us */
 		const u_char *packet;		/* The actual packet */
-		int size = header->len;
-		u_char *buffer
+		
+		u_char *buffer;
 
 		/* Define the device */
 		dev = pcap_lookupdev(errbuf);
@@ -74,15 +74,23 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
 			return(2);
 		}
+
+	const struct sniff_ip *ip;
+	
+
+
 	while (pcap_next_ex(handle, &header, &packet) >= 0)
 	{
-		ethernet = (struct sniff_ethernet*)(packet);
-		ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
+		printf("header->len : %d\n", header->len);
+		//ethernet = (struct sniff_ethernet*)(packet);
+		//ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
 		
-		print_ethernet_header(buffer, size);
-		printf("src ip address: %s dest address: %s \n", inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dest));
+		//print_ethernet_header(buffer, size);
+		//printf("src ip address: %s dest address: %s \n", inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dst));
 			
 	}
+
+
 }
 void print_ethernet_header(const u_char *Buffer, int Size)
 {
