@@ -44,6 +44,8 @@ int main(int argc, char *argv[])
 		bpf_u_int32 net;		/* Our IP */
 		struct pcap_pkthdr header;	/* The header that pcap gives us */
 		const u_char *packet;		/* The actual packet */
+		int size = header->len;
+		u_char *buffer
 
 		/* Define the device */
 		dev = pcap_lookupdev(errbuf);
@@ -72,22 +74,15 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
 			return(2);
 		}
-		//while(1){
-		/* Grab a packet */
-		//packet = pcap_next(handle, &header);
-		/* Print its length */
-		//printf("Jacked a packet with length of [%d]\n", header.len);
-		/* And close the session */
-		//pcap_close(handle);
-		//return(0);
-		//}
-		pcap_loop(handle, -1, process_packet, NULL);
-}
-void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *buffer)
-{
-	int size = header->len;
-	//print_ethernet_header(buffer, size);
-	print_ip_header(buffer, size);
+	while (pcap_next_ex(handle, &header, &packet) >= 0)
+	{
+		ethernet = (struct sniff_ethernet*)(packet);
+		ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
+		
+		print_ethernet_header(buffer, size);
+		printf("src ip address: %s dest address: %s \n", inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dest));
+			
+	}
 }
 void print_ethernet_header(const u_char *Buffer, int Size)
 {
