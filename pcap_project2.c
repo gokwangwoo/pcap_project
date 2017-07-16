@@ -29,10 +29,10 @@ struct sniff_ip {
 };
 #define IP_HL(ip)	(((ip)->ip_vhl) & 0x0f)
 #define IP_V(ip)	(((ip)->ip_vhl) >> 4)
-
+struct sockaddr_in source,dest;
 void process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
 void print_ethernet_header(const u_char *Buffer, int Size);
-void print_ip_packet(const u_char *Buffer , int Size);
+void print_ip_header(const u_char *, int );
 int main(int argc, char *argv[])
 {
 		pcap_t *handle;			/* Session handle */
@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 		bpf_u_int32 net;		/* Our IP */
 		struct pcap_pkthdr *header;	/* The header that pcap gives us */
 		const u_char *packet;		/* The actual packet */
+		int size;
 		
 		u_char *buffer;
 
@@ -76,16 +77,16 @@ int main(int argc, char *argv[])
 		}
 
 	const struct sniff_ip *ip;
-	
 
 
 	while (pcap_next_ex(handle, &header, &packet) >= 0)
 	{
-		printf("header->len : %d\n", header->len);
+		//printf("header->len : %d\n", header->len);
+		 size = header->len;
 		//ethernet = (struct sniff_ethernet*)(packet);
 		//ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
 		
-		//print_ethernet_header(buffer, size);
+		print_ethernet_header(buffer, size);
 		//printf("src ip address: %s dest address: %s \n", inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dst));
 			
 	}
@@ -94,34 +95,37 @@ int main(int argc, char *argv[])
 }
 void print_ethernet_header(const u_char *Buffer, int Size)
 {
-     //struct ethhdr *eth = (struct ethhdr *)Buffer;
+	
      struct sniff_ethernet *eth = (struct sniff_ethernet *)Buffer;
+     
+    
+
 
      printf("\n");
      printf("Ethernet Header\n");
      printf("   |-Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", eth->h_dest[0] , eth->h_dest[1] , eth->h_dest[2] , eth->h_dest[3] , eth->h_dest[4], eth->h_dest[5]);
      printf("   |-Source Address      : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", eth->h_source[0] , eth->h_source[1] , eth->h_source[2] , eth->h_source[3], eth->h_source[4], eth->h_source[5]);
-     printf("   |-Protocol            : %u \n",(unsigned short)eth->h_proto);
+     printf("   |-Protocol            : %d \n",(unsigned short)eth->h_proto);
 
+     //struct sniff_ip *iph = (struct sniff_ip *)(Buffer + sizeof(struct eth));
+     struct sniff_ip *iph = (struct sniff_ip *)(Buffer + sizeof(struct sniff_ethernet));
+
+     unsigned short iphdrlen = iph->ip_len*4;
+     
+    
+     //source.sin_addr.s_addr = iph->in_addr.ip_src;
+
+     
+     //memset(&source, 0, sizeof(source));
+     //source.sin_addr.s_addr = iph->in_addr.ip_src;
+     //memset(&inet_ntoa, 0, sizeof(inet_ntoa));
+     //dest.sin_addr.s_addr = iph->in_addr.ip_dst;
+
+      printf("Source IP: %s\n", inet_ntoa(iph->ip_src));
+     printf("Destination IP: %s\n", inet_ntoa(iph->ip_dst));
+     
 }
 
-void print_ip_header(const u_char * Buffer, int Size)
-{
-    print_ethernet_header(Buffer , Size);
-   
-    unsigned short iphdrlen;
-    const u_char *packet; 
-    const struct sniff_ip *iph;
-    iph = (struct sniff_ip*)(packet + SIZE_ETHERNET); 
-    iphdrlen =iph->ip_len*4;
-    if (iphdrlen < 20) {
-            printf("   * Invalid IP header length: %u bytes\n",iphdrlen);
-            return;
-        }
-    printf("\n");
-    printf("IP Header\n");
-    printf("   |-Source IP        : %s\n" , inet_ntoa(iph->ip_src));
-    printf("   |-Destination IP   : %s\n", inet_ntoa(iph->ip_dst));
 
-}
+
 
