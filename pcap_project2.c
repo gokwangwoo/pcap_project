@@ -55,8 +55,8 @@ struct sniff_tcp {
         u_short th_sum;                 /* checksum */
         u_short th_urp;                 /* urgent pointer */
 };
-void print_ethernet_header(const u_char *Buffer, int Size);
-void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
+
+void print_packet_data(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 void print_payload(const u_char *payload, int len);
 void print_hex_ascii_line(const u_char *payload, int len, int offset);
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 		struct pcap_pkthdr *header;	/* The header that pcap gives us */
 		const u_char *Buffer;		/* The actual packet */
 		int size;
-		
+		int packetnumber = 10;
 		u_char *buffer;
 
 		/* Define the device */
@@ -114,13 +114,7 @@ int main(int argc, char *argv[])
 		//return(0);
 		//}
 
-	/*while (pcap_next_ex(handle, &header, &Buffer) >= 0)
-	{
-		size = header->len;
-		print_ethernet_header(buffer, size);
-			
-	}*/
-        pcap_loop(handle, -1, got_packet, NULL);
+        pcap_loop(handle, packetnumber, print_packet_data, NULL);
 
 
 }
@@ -128,12 +122,10 @@ int main(int argc, char *argv[])
     
     
 	
-void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
+void print_packet_data(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
 
-	static int count = 1;                   /* packet counter */
 	
-	/* declare pointers to packet headers */
 	const struct sniff_ethernet *ethernet;  
 	const struct sniff_ip *ip;              /* The IP header */
 	const struct sniff_tcp *tcp;            /* The TCP header */
@@ -145,11 +137,10 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	
 	/* define ethernet header */
 	ethernet = (struct sniff_ethernet*)(packet);
-     printf("\n");
-     printf("Ethernet Header\n");
-     printf("   |-Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", ethernet->h_dest[0] , ethernet->h_dest[1] , ethernet->h_dest[2] , ethernet->h_dest[3] , ethernet->h_dest[4], ethernet->h_dest[5]);
-     printf("   |-Source Address      : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", ethernet->h_source[0] , ethernet->h_source[1] , ethernet->h_source[2] , ethernet->h_source[3], ethernet->h_source[4], ethernet->h_source[5]);
-     //printf("   |-Protocol            : %u \n",(unsigned short)eth->h_proto);
+     	printf("\n");
+     	printf("Ethernet Header\n");
+     	printf("|-Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", ethernet->h_dest[0] , ethernet->h_dest[1] , ethernet->h_dest[2] , ethernet->h_dest[3] , ethernet->h_dest[4], ethernet->h_dest[5]);
+     	printf("|-Source Address      : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", ethernet->h_source[0] , ethernet->h_source[1] , ethernet->h_source[2] , ethernet->h_source[3], ethernet->h_source[4], ethernet->h_source[5]);
 
 	ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
 	size_ip = IP_HL(ip)*4;
@@ -159,8 +150,8 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	}
 
 	/* print source and destination IP addresses */
-	printf("       From: %s\n", inet_ntoa(ip->ip_src));
-	printf("         To: %s\n", inet_ntoa(ip->ip_dst));
+	printf("       Source IP: %s\n", inet_ntoa(ip->ip_src));
+	printf("       Destionation IP: %s\n", inet_ntoa(ip->ip_dst));
 	
 	/* determine protocol */	
 	switch(ip->ip_p) {
@@ -168,16 +159,12 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 			printf("   Protocol: TCP\n");
 			break;
 		case IPPROTO_UDP:
-			printf("   Protocol: UDP\n");
 			return;
 		case IPPROTO_ICMP:
-			printf("   Protocol: ICMP\n");
 			return;
 		case IPPROTO_IP:
-			printf("   Protocol: IP\n");
 			return;
 		default:
-			printf("   Protocol: unknown\n");
 			return;
 	}
 	
@@ -194,7 +181,6 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	printf("   Src port: %d\n", ntohs(tcp->th_sport));
 	printf("   Dst port: %d\n", ntohs(tcp->th_dport));
 	
-	/* define/compute tcp payload (segment) offset */
 	payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 	
 	/* compute tcp payload (segment) size */
@@ -266,7 +252,8 @@ void print_hex_ascii_line(const u_char *payload, int len, int offset)
 	/* hex */
 	ch = payload;
 	for(i = 0; i < len; i++) {
-		printf("%02x ", *ch);
+		printf("%02x ", *ch); //hex data transform to Capital letter and if data null print 0(데이터가 없으면 0을 출력한다 ex) 04)이런식으로
+		//printf("%x", *ch);
 		ch++;
 		/* print extra space after 8th byte for visual aid */
 		if (i == 7)
@@ -286,7 +273,7 @@ void print_hex_ascii_line(const u_char *payload, int len, int offset)
 	printf("   ");
 	
 	/* ascii (if printable) */
-	ch = payload;
+	ch = payload; //인쇄가능 즉 character문자 출력을 해주고 아닌 경우는 . 으로 처리
 	for(i = 0; i < len; i++) {
 		if (isprint(*ch))
 			printf("%c", *ch);
